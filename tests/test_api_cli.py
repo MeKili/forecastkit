@@ -46,6 +46,23 @@ def test_cli_prints_leaderboard() -> None:
     assert "holt_winters" in buffer.getvalue()
 
 
+def test_cli_calibrate_flag_prints_report() -> None:
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        code = main(["--n", "240", "--season", "12", "--horizon", "6", "--calibrate"])
+    assert code == 0
+    assert "calibration report for" in buffer.getvalue()
+    assert "overall coverage" in buffer.getvalue()
+
+
+def test_cli_calibrate_flag_reports_when_too_few_folds() -> None:
+    buffer = io.StringIO()
+    with redirect_stdout(buffer):
+        code = main(["--n", "20", "--season", "1", "--horizon", "5", "--calibrate"])
+    assert code == 0
+    assert "calibration report unavailable" in buffer.getvalue()
+
+
 def test_load_csv(tmp_path: Path) -> None:
     path = tmp_path / "s.csv"
     path.write_text("date,value\n2026-01-01,1.5\n2026-01-02,2.5\n", encoding="utf-8")

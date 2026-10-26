@@ -65,6 +65,16 @@ uv run python -c "import json; from forecastkit.data import make_synthetic; prin
 The series has to be long enough for a few backtest folds, otherwise the API answers with a 422
 explaining that the series is too short.
 
+Check whether the intervals mean what they say with a calibration report:
+
+```bash
+uv run python -m forecastkit.cli --n 240 --season 12 --horizon 12 --calibrate --level 0.8
+```
+
+This backtests the chosen model, splits the folds in time order, fits interval offsets on the
+earlier half and reports realized coverage and width per horizon step on the later, held-out
+half. Pass `--model` to check a specific model instead of the leaderboard winner.
+
 From Python:
 
 ```python
@@ -82,6 +92,11 @@ print(out.model, out.forecast[:3], out.lower[:3], out.upper[:3])
 - **Intervals come from signed residual quantiles per horizon step**, not a fixed Gaussian
   assumption. They can be asymmetric and tend to widen with the horizon. This is a simple
   split-conformal style approach and needs at least three folds.
+- **The calibration report avoids grading the offsets on their own folds.** Measuring coverage
+  on the same folds used to fit the quantile offsets is circular: the offsets are built from
+  those folds' own errors, so they look well calibrated by construction. The report instead
+  fits offsets on the earlier half of the backtest folds and measures coverage on the later,
+  held-out half, and needs at least six folds in total to do that split.
 - **Model choice is by MAE on the same folds for every model**, so the comparison is fair.
   The trade-off is cost: auto mode refits every model at every origin, so it is meant for
   series of a few thousand points at most. The API enforces a size cap for that reason.
